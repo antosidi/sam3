@@ -38,8 +38,11 @@ class TransformerDecoderLayer(nn.Module):
         cross_attention: nn.Module,
         n_heads: int,
         use_text_cross_attention: bool = False,
+        device: str = "cuda"
     ):
         super().__init__()
+        
+        self.device = device
 
         # cross attention
         self.cross_attn = cross_attention
@@ -71,7 +74,7 @@ class TransformerDecoderLayer(nn.Module):
         return tensor if pos is None else tensor + pos
 
     def forward_ffn(self, tgt):
-        with torch.amp.autocast(device_type="cuda", enabled=False):
+        with torch.amp.autocast(device_type=self.device, enabled=False):
             tgt2 = self.linear2(self.dropout3(self.activation(self.linear1(tgt))))
         tgt = tgt + self.dropout4(tgt2)
         tgt = self.norm3(tgt)
@@ -217,8 +220,10 @@ class TransformerDecoder(nn.Module):
         separate_norm_instance: bool = False,
         resolution: Optional[int] = None,
         stride: Optional[int] = None,
+        device: str = "cuda",
     ):
         super().__init__()
+        self.device = device
         self.d_model = d_model
         self.layers = get_clones(layer, num_layers)
         self.fine_layers = (
@@ -278,7 +283,7 @@ class TransformerDecoder(nn.Module):
             if resolution is not None and stride is not None:
                 feat_size = resolution // stride
                 coords_h, coords_w = self._get_coords(
-                    feat_size, feat_size, device="cuda"
+                    feat_size, feat_size, device=self.device
                 )
                 self.compilable_cord_cache = (coords_h, coords_w)
                 self.compilable_stored_size = (feat_size, feat_size)
