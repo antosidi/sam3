@@ -150,7 +150,7 @@ def _create_transformer_encoder() -> TransformerEncoderFusion:
     return encoder
 
 
-def _create_transformer_decoder() -> TransformerDecoder:
+def _create_transformer_decoder(device: str = "cuda") -> TransformerDecoder:
     """Create transformer decoder with its layer."""
     decoder_layer = TransformerDecoderLayer(
         activation="relu",
@@ -164,6 +164,7 @@ def _create_transformer_decoder() -> TransformerDecoder:
         ),
         n_heads=8,
         use_text_cross_attention=True,
+        device=device,
     )
 
     decoder = TransformerDecoder(
@@ -183,6 +184,7 @@ def _create_transformer_decoder() -> TransformerDecoder:
         stride=14,
         use_act_checkpoint=True,
         presence_token=True,
+        device=device,
     )
     return decoder
 
@@ -512,10 +514,10 @@ def _create_vision_backbone(
     return vit_neck
 
 
-def _create_sam3_transformer(has_presence_token: bool = True) -> TransformerWrapper:
+def _create_sam3_transformer(has_presence_token: bool = True, device: str = "cuda") -> TransformerWrapper:
     """Create SAM3 transformer encoder and decoder."""
     encoder: TransformerEncoderFusion = _create_transformer_encoder()
-    decoder: TransformerDecoder = _create_transformer_decoder()
+    decoder: TransformerDecoder = _create_transformer_decoder(device=device)
 
     return TransformerWrapper(encoder=encoder, decoder=decoder, d_model=256)
 
@@ -596,7 +598,7 @@ def build_sam3_image_model(
     backbone = _create_vl_backbone(vision_encoder, text_encoder)
 
     # Create transformer components
-    transformer = _create_sam3_transformer()
+    transformer = _create_sam3_transformer(device=device)
 
     # Create dot product scoring
     dot_prod_scoring = _create_dot_product_scoring()
