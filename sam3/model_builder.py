@@ -162,7 +162,7 @@ def _create_transformer_encoder(use_fa3=False) -> TransformerEncoderFusion:
     return encoder
 
 
-def _create_transformer_decoder(use_fa3=False) -> TransformerDecoder:
+def _create_transformer_decoder(device: str = "cuda", use_fa3: bool = False) -> TransformerDecoder:
     """Create transformer decoder with its layer."""
     decoder_layer = TransformerDecoderLayer(
         activation="relu",
@@ -177,6 +177,7 @@ def _create_transformer_decoder(use_fa3=False) -> TransformerDecoder:
         ),
         n_heads=8,
         use_text_cross_attention=True,
+        device=device,
     )
 
     decoder = TransformerDecoder(
@@ -196,6 +197,7 @@ def _create_transformer_decoder(use_fa3=False) -> TransformerDecoder:
         stride=14,
         use_act_checkpoint=True,
         presence_token=True,
+        device=device,
     )
     return decoder
 
@@ -527,11 +529,11 @@ def _create_vision_backbone(
 
 
 def _create_sam3_transformer(
-    has_presence_token: bool = True, use_fa3: bool = False
+    has_presence_token: bool = True, device: str = "cuda", use_fa3: bool = False
 ) -> TransformerWrapper:
     """Create SAM3 transformer encoder and decoder."""
     encoder: TransformerEncoderFusion = _create_transformer_encoder(use_fa3=use_fa3)
-    decoder: TransformerDecoder = _create_transformer_decoder(use_fa3=use_fa3)
+    decoder: TransformerDecoder = _create_transformer_decoder(device=device, use_fa3=use_fa3)
 
     return TransformerWrapper(encoder=encoder, decoder=decoder, d_model=256)
 
@@ -613,7 +615,7 @@ def build_sam3_image_model(
     backbone = _create_vl_backbone(vision_encoder, text_encoder)
 
     # Create transformer components
-    transformer = _create_sam3_transformer()
+    transformer = _create_sam3_transformer(device=device)
 
     # Create dot product scoring
     dot_prod_scoring = _create_dot_product_scoring()
@@ -706,7 +708,7 @@ def build_sam3_video_model(
     visual_neck = _create_vision_backbone()
     text_encoder = _create_text_encoder(bpe_path)
     backbone = SAM3VLBackbone(scalp=1, visual=visual_neck, text=text_encoder)
-    transformer = _create_sam3_transformer(has_presence_token=has_presence_token)
+    transformer = _create_sam3_transformer(has_presence_token=has_presence_token, device=device)
     segmentation_head: UniversalSegmentationHead = _create_segmentation_head()
     input_geometry_encoder = _create_geometry_encoder()
 
