@@ -93,6 +93,7 @@ exclude = ["build*", "scripts*", "examples*"]
 
 [tool.setuptools.package-data]
 sam3 = ["assets/*.txt.gz"]
+where = ["."]
 
 [tool.setuptools.dynamic]
 version = {attr = "sam3.__version__"}
